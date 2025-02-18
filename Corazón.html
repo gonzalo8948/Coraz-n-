@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Heart</title>
+  <style>
+    /* Estilos generales */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000; /* Fondo negro */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Canvas ajustado al tamaño de la pantalla */
+    #heartCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="heartCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("heartCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const mouse = { x: null, y: null };
+
+    window.addEventListener("mousemove", (event) => {
+      mouse.x = event.x;
+      mouse.y = event.y;
+    });
+
+    // Crear partículas en forma de corazón
+    function createHeartParticles() {
+      const heartShape = [];
+      for (let y = -10; y <= 10; y += 0.3) {
+        for (let x = -10; x <= 10; x += 0.3) {
+          const formula =
+            Math.pow(x * 0.2, 2) +
+            Math.pow(y * 0.2 - Math.sqrt(Math.abs(x * 0.2)), 2);
+          if (formula <= 1.1) {
+            heartShape.push({ x: x * 15, y: -y * 15 });
+          }
+        }
+      }
+      return heartShape;
+    }
+
+    const heartPoints = createHeartParticles();
+
+    class Particle {
+      constructor(x, y) {
+        this.x = canvas.width / 2 + x;
+        this.y = canvas.height / 2 + y;
+        this.originalX = this.x;
+        this.originalY = this.y;
+        this.size = Math.random() * 4 + 2; // Tamaño más grande
+        this.color = `rgba(255, 0, 0, ${Math.random() * 0.8 + 0.2})`; // Partículas más visibles
+        this.speedX = Math.random() * 3 - 1.5;
+        this.speedY = Math.random() * 3 - 1.5;
+        this.followingMouse = false;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+
+      update() {
+        const distance = Math.hypot(mouse.x - this.x, mouse.y - this.y);
+        if (distance < 100) {
+          this.followingMouse = true;
+        } else {
+          this.followingMouse = false;
+        }
+
+        if (this.followingMouse) {
+          this.x += (mouse.x - this.x) * 0.1;
+          this.y += (mouse.y - this.y) * 0.1;
+        } else {
+          this.x += (this.originalX - this.x) * 0.02;
+          this.y += (this.originalY - this.y) * 0.02;
+        }
+      }
+    }
+
+    function animateHeart() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (particles.length < heartPoints.length) {
+        const randomPoint = heartPoints[particles.length];
+        particles.push(new Particle(randomPoint.x, randomPoint.y));
+      }
+
+      particles.forEach((particle) => {
+        particle.update();
+        particle.draw();
+      });
+
+      // Limitar la cantidad de partículas en pantalla para evitar sobrecargar la memoria
+      particles.filter((particle) => particle.size > 1); // Filtra partículas más pequeñas
+      
+      requestAnimationFrame(animateHeart);
+    }
+
+    animateHeart();
+  </script>
+</body>
+
+</html>
